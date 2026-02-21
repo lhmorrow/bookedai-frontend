@@ -1,4 +1,4 @@
-import axios, { AxiosInstance } from 'axios';
+import axios from 'axios';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
 
@@ -50,7 +50,7 @@ export const businessAPI = {
 // Subscription endpoints
 export const subscriptionAPI = {
   checkout: (tier: string) =>
-    apiClient.post('/subscription/checkout', { tier }),
+    apiClient.post('/api/stripe/checkout-session', { tier }),
 
   status: () => apiClient.get('/subscription/status'),
 
