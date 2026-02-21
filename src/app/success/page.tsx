@@ -1,14 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { businessAPI } from '@/lib/api';
 import { getToken } from '@/lib/auth';
 
 export default function SuccessPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+
   const [status, setStatus] = useState<'loading' | 'provisioning' | 'active' | 'error'>('loading');
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState('');
