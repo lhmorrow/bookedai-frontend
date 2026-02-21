@@ -83,7 +83,6 @@ export default function ExampleDashboardPage() {
   const subscription = EXAMPLE_SUBSCRIPTION;
   const stats = EXAMPLE_STATS;
   const appointments = EXAMPLE_APPOINTMENTS;
-  const isActive = business.onboarding_status === 'active';
 
   return (
     <div className="pt-20 pb-12">
