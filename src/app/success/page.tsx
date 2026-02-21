@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { businessAPI } from '@/lib/api';
 import { getToken } from '@/lib/auth';
-import LoadingSpinner from '@/components/LoadingSpinner';
 
 export default function SuccessPage() {
   const router = useRouter();
