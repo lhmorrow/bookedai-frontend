@@ -67,7 +67,9 @@ export default function PricingPage() {
       setLoadingTier(tier);
 
       // Get business ID - if not authenticated, redirect to signup
-      const businessId = getBusinessId();
+      const businessId = typeof window !== 'undefined'
+  ? Number(localStorage.getItem('businessId') || 0)
+  : 0;
       if (!businessId) {
         setLoadingTier(null);
         router.push('/signup');
