@@ -2,8 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getToken, getBusinessId } from '@/lib/auth';
-import { subscriptionAPI } from '@/lib/api';
+import { getToken } from '@/lib/auth';
 
 const pricingTiers = [
   {
@@ -23,7 +22,7 @@ const pricingTiers = [
     tier: 'starter',
   },
   {
-    name: 'Growth',
+    name: 'Pro',
     price: 199,
     minutes: 300,
     callRange: '~75–100 calls/month',
@@ -40,7 +39,7 @@ const pricingTiers = [
     popular: true,
   },
   {
-    name: 'Pro',
+    name: 'Elite',
     price: 349,
     minutes: 700,
     callRange: '~175–230 calls/month',
@@ -67,25 +66,68 @@ export default function PricingPage() {
       setError(null);
       setLoadingTier(tier);
 
-      // Get auth token - if not authenticated, redirect to signup
-      const token = getToken();
-      if (!token) {
+      // Get business ID - if not authenticated, redirect to signup
+      const businessId = getBusinessId();
+      if (!businessId) {
+        setLoadingTier(null);
         router.push('/signup');
         return;
       }
 
-      // Call backend checkout endpoint
-      const response = await subscriptionAPI.checkout(tier);
+      console.log('[Checkout] Starting checkout for:', { businessId, tier });
 
-      // Redirect to Stripe checkout
-      if (response.data?.checkout_url) {
-        window.location.href = response.data.checkout_url;
-      } else {
-        setError('Failed to initiate checkout. Please try again.');
+      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
+
+      // Create an abort controller with 30 second timeout
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30000);
+
+      try {
+        // Call backend checkout endpoint
+        const response = await fetch(`${apiBase}/api/stripe/checkout-session`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${getToken() || ''}`,
+          },
+          body: JSON.stringify({
+            business_id: businessId,
+            tier: tier,
+          }),
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeout);
+        console.log('[Checkout] Got response:', response.status);
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData?.error || `HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('[Checkout] Success:', data);
+
+        // Redirect to Stripe checkout
+        if (data?.checkout_url) {
+          window.location.href = data.checkout_url;
+        } else {
+          setError('No checkout URL received. Please try again.');
+          setLoadingTier(null);
+        }
+      } catch (fetchErr: any) {
+        clearTimeout(timeout);
+        console.error('[Checkout] Fetch error:', fetchErr);
+        if (fetchErr.name === 'AbortError') {
+          setError('Request timed out. Please check your connection and try again.');
+        } else {
+          setError(fetchErr?.message || 'Checkout failed. Please try again.');
+        }
+        setLoadingTier(null);
       }
     } catch (err: any) {
-      console.error('Checkout error:', err);
-      setError(err?.response?.data?.error || 'Checkout failed. Please try again.');
+      console.error('[Checkout] Outer error:', err);
+      setError('An unexpected error occurred. Please try again.');
       setLoadingTier(null);
     }
   };
